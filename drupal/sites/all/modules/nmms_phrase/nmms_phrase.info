@@ -1,0 +1,3 @@
+name = NMMS Phrase
+description = No More Management Speak phrase module. Used for collecting phrase data
+core = 7.x

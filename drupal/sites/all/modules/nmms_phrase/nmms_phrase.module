@@ -1,0 +1,155 @@
+<?php
+/**
+* @file
+* A No More Management Speak phrase module.
+*/
+
+/**
+* Implements hook_help.
+*
+* Displays help and module information.
+*
+* @param path
+*   Which path of the site we're using to display help
+* @param arg
+*   Array that holds the current path as returned from arg() function
+*/
+function nmms_phrase_help($path, $arg)
+{
+	switch($path)
+	{
+		case "admin/help#nmms_phrase":
+		  return '<p>' . t("Displays No More Management Speak phrase information") . '</p>';
+		  break;
+	}
+}
+
+function nmms_phrase_block_info()
+{
+	$blocks['nmms_phrase'] = array
+	(
+		//The name that will appear in the block list.
+		'info' => t('No More Management Speak data entry form'),
+		//Default setting.
+		'cache' => DRUPAL_CACHE_PER_ROLE,
+	);
+	return $blocks;
+}
+
+/**
+* This function defines the URL for, in this case, the form
+*/
+function nmms_phrase_menu() {
+  $items = array();
+  $items['nmms_phrase/form'] = array
+  (
+    'title' => t('My form'),
+    'page callback' => 'nmms_phrase_form',
+    'access arguments' => array('access content'),
+    'description' => t('My form'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+* This function gets called for http://www.nomoremanagementspeak.com/nmms_phrase/form
+*/
+function nmms_phrase_form()
+{
+	return drupal_get_form('nmms_phrase_example_form');
+}
+
+/**
+* Create a new test form
+*/
+function nmms_phrase_example_form($form, &$form_state)
+{
+	$form['nmms_phrase'] = array
+	(
+		'#type' => 'fieldset',
+		'#title' => 'Add new management phrase',
+	);
+	
+	$form['nmms_phrase']['phrase'] = array
+	(
+		'#type' => 'textfield',
+		'#title' => t('Managent word or phrase'),
+		'#required' => TRUE,
+	);
+	
+	$form['nmms_phrase']['usage'] = array
+	(
+		'#type' => 'textarea',
+		'#title' => t('Word or phrase usage'),
+		'#rows' => 4,
+		'#cols#' => 20,
+		'#resizable' => FALSE,
+	);
+	
+	$form['nmms_phrase']['submit'] = array
+	(
+		'#type' => 'submit',
+		'#value' => 'Submit',
+	);
+	
+	$form['#attached']['css'] = array
+	(
+		drupal_get_path('module', 'nmms_phrase') . '/nmms_phrase.css',
+	);
+  
+	return $form;
+}
+
+/**
+* Function to validate form input
+*/
+function nmms_phrase_example_form_validate($form, &$form_state)
+{
+	$myNewTitle = $form_state['values']['phrase'];
+	 $query = db_select('node', 'n')
+	  ->fields('n', array('nid'))
+	  ->condition('n.title', $myNewTitle, '=');
+	
+	$result = $query->countQuery()->execute()->fetchField();
+	
+	if($result > 0)
+	{
+		form_set_error('Phrase already exists', 'That phrase is already known. Add a comment to it if you\'d like to contribute.');
+	}
+}
+
+/**
+* Function to submit the form details to the DB
+*/
+function nmms_phrase_example_form_submit($form, &$form_state)
+{		
+	$node = new stdClass;
+	$node->type = 'management_speak_phrase';
+	$node->language = LANGUAGE_NONE;
+	$node->title = $form_state['values']['phrase'];
+	$node->field_management_phrase[$node->language][0]['value'] = $form_state['values']['usage'];
+	
+	$term = taxonomy_get_term_by_name('unmoderated'); 
+	$node->field_management_tag[$node->language][]['tid'] = key($term);
+	
+	$node->comment = 2; // 0 = comments disabled, 1 = read only, 2 = read/write
+	
+	node_save($node);
+	drupal_set_message(t('Settings have been saved'));
+}
+
+/**
+* Function to show the form as a block content
+*/
+function nmms_phrase_block_view($delta='')
+{
+	$block = array();
+  	switch($delta) 
+	{
+    	case 'nmms_phrase' :
+      	$block['content'] = nmms_phrase_form();
+      	break;
+  	}
+  	return $block;
+}

@@ -1,0 +1,10 @@
+textarea.form-textarea 
+{ 
+	width: 500px; 
+	resize: none;
+}
+
+input.form-text
+{
+	width: 500px;
+}
